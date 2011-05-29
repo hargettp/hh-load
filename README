@@ -1,0 +1,53 @@
+HH-Load
+
+Very basic load generator for CL projects.  Makes use of Eager Futures for suitable multi-threading
+of load creation, and depends upon Drakma for HTTP  For now, only works on SBCL, but only because it 
+depends upon a specific SBCL condition when handling socket connection failures.
+
+Basically, 2 major functions for now:
+
+ * generate-load : Supply any callable function (with optional amount of concurrency and max number
+   of iterations), and generate-load will make sure the function is called the specified number
+   of iterations spread across a concurrent number of invocations.  So, for example, if concurrency
+   is 5 and iterations is 20, then hh-load will advise the Eager Futures runtime to use 5 threads,
+   then queue up 20 different futures--resulting most likely in each of the 5 threads handling
+   4 iterations each.
+
+ * generate-http-load : Instead of passing a function, pass an URL as a string, and generate-http-load
+   will generate HTTP GET requests against the URL.  The same concurrency and iteration parameters as 
+   for generate-load are valid here as well.  Note that if an interrupt occurs during socket connection,
+   then the socket connection will be attempted again (based on handling an SBCL-specific condition,
+   SB-BSD-SOCKETS:INTERUPPTED-ERROR).
+
+Upon completion, both functions print out information to *error-output* (e.g., stderr), like this:
+
+     Elapsed time: 1.275
+     Completed: 100 iterations
+     Iterations per second: 78.431/second
+     Errors: 6 (6.000%)
+     Longest: 1.028 seconds
+     Average: 0.171 seconds
+     Fastest: 0.008 seconds
+
+Both functions will also print out a consolidated list of any errors encounters during the run, based
+on the message reported for each such error, including the number of times the error was encountered
+ (e.g., "3 times 'Condition USOCKET:CONNECTION-RESET-ERROR was signalled.'").
+
+These functions return multiple values, which presently include:
+
+ * elapsed-time : total elapsed time in seconds for complete run
+ * completed-iterations : total number of iterations performed (nearly always the same as passed in)
+ * iterations-per-second : completed iterations divided by elapsed time
+ * total-errors : total number of errors encountered during the run (an error usually terminates an iteration)
+ * error-rate : total errors divided by completed iterations
+ * max-iteration-duration : longest iteration encountered, in seconds
+ * average-duration : average duration across all iterations, in seconds
+ * min-iteration-duration : fastest iteration encountered, in seconds
+
+All original code in this package licensed under the MIT license.
+
+Contact phil@haphazardhouse.net for any questions, comments, feedback, or contributions, and keep an eye on
+http://haphazardhouse.net/projects/hh-load for info and news about hh-load.
+
+
+
